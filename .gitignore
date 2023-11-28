@@ -249,3 +249,7 @@ fabric.properties
 
 # Other files to ignore
 eego_sdk_installer/*
+test_data/*
+
+
+
