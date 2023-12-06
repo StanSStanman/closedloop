@@ -13,5 +13,3 @@ def find_value_indices(arr, target_value):
             start = i + 1
 
     return nearby_indices
-
-def
