@@ -251,5 +251,11 @@ fabric.properties
 eego_sdk_installer/*
 test_data/*
 
+### CUSTOM
 
-
+.idea
+Scripts
+pyvenv.cfg
+etc
+share
+*.fif
