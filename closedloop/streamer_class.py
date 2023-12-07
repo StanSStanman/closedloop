@@ -95,24 +95,24 @@ if __name__ == '__main__':
     stream.chans_sel(['F1-F3','C4-A1'])
     # stream.chans_sel(['C4-A1'])
     stream.stages = [0, 1, 2, 3]
-    stream.buffer_len = 500.
+    stream.buffer_len = 50.
     stream.prepare()
 
     figure = online_vis()
     figure.n_sample = 5000
-    figure.figsize = (15,9)
+    figure.figsize = (15, 9)
     figure.stages = True
 
     t_start = time.time()
-    n_chunks = int(raw.times[-1] / (stream.buffer_len / 1000))
-    # n_chunks = 50000
+    # n_chunks = int(raw.times[-1] / (stream.buffer_len / 1000))
+    n_chunks = 50000
     print(n_chunks)
 
     data = []
     for n in range(n_chunks):
         signal = stream.stream()
         data.append(signal)
-        figure.update(signal)
+        # figure.update(signal)
     # data = Parallel(n_jobs=-1, backend='sequential')(delayed(stream.stream)() for i in range(n_chunks))
     t_end = time.time()
     print('Total time:', t_end - t_start)
