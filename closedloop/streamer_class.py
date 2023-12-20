@@ -89,13 +89,14 @@ if __name__ == '__main__':
     eve_fname = op.join(path, '{0}_eve.fif')
 
     raw = mne.io.read_raw_fif(raw_fname.format(subjects[0]))
+    raw.crop(tmin=7200)
     events = mne.read_events(eve_fname.format(subjects[0]))
 
     stream = data_streamer(raw, events)
-    stream.chans_sel(['F1-F3','C4-A1'])
+    stream.chans_sel(['F4-C4', 'C4-A1'])
     # stream.chans_sel(['C4-A1'])
     stream.stages = [0, 1, 2, 3]
-    stream.buffer_len = 50.
+    stream.buffer_len = 100.
     stream.prepare()
 
     figure = online_vis()
@@ -112,7 +113,7 @@ if __name__ == '__main__':
     for n in range(n_chunks):
         signal = stream.stream()
         data.append(signal)
-        # figure.update(signal)
+        figure.update(signal)
     # data = Parallel(n_jobs=-1, backend='sequential')(delayed(stream.stream)() for i in range(n_chunks))
     t_end = time.time()
     print('Total time:', t_end - t_start)

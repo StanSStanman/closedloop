@@ -132,8 +132,8 @@ if __name__ == '__main__':
 
 
     t_start = time.time()
-    # n_chunks = int(raw.times[-1] / (stream.buffer_len / 1000))
-    n_chunks = 50000
+    n_chunks = int(raw.times[-1] / (stream.buffer_len / 1000))
+    # n_chunks = 50000
     print(n_chunks)
 
     data = []
