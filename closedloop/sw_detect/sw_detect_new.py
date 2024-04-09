@@ -1,5 +1,6 @@
 import numpy as np
 import scipy as sp
+import pandas as pd
 import mne
 import warnings
 
@@ -10,7 +11,8 @@ def envelope(data, n_excl=1, n_kept=3):
     if isinstance(data, (mne.io.Raw, mne.io.BaseRaw)):
         sfreq = data.info['sfreq']
         data = data.get_data()       
-    data = np.sort(data, axis=0, kind='quicksort')
+    # data = np.sort(data, axis=0, kind='quicksort')
+    data = np.sort(data, axis=0, kind='stable')
     envp = np.mean(data[n_excl:n_excl+n_kept, :], axis=0, keepdims=True)
     
     return envp, ch_name, sfreq
@@ -97,10 +99,14 @@ def sw_filter(data, sfreq=None, copy=False, n_jobs='cuda'):
                                                return_copy=copy)
     
     if isinstance(data, (np.ndarray)):
+        # filt_data = mne.filter.filter_data(data, sfreq, l_freq=.5, h_freq=4., 
+        #                                    picks=None, filter_length='auto',
+        #                                    n_jobs=n_jobs, method='iir',
+        #                                    iir_params=iir_filt, copy=copy, 
+        #                                    phase='zero', pad='reflect_limited')
         filt_data = mne.filter.filter_data(data, sfreq, l_freq=.5, h_freq=4., 
                                            picks=None, filter_length='auto',
-                                           n_jobs=n_jobs, method='iir',
-                                           iir_params=iir_filt, copy=copy, 
+                                           n_jobs=n_jobs, method='fir',
                                            phase='zero', pad='reflect_limited')
     elif isinstance(data, (mne.io.Raw, mne.io.BaseRaw)):
         # filt_data = data.filter(l_freq=.5, h_freq=4., picks=None, 
@@ -292,8 +298,8 @@ def detect_sw(data, sfreq=None, ch_names=None, half_wlen=(0.25, 1.),
         assert len(ch_names) == data.get_data().shape[0], ('mismatch in between '/
             'length of ch_names and number of channels in data')
     
-    # data = detrend(data)
-    data = noout_detrend(data)
+    data = detrend(data)
+    # data = noout_detrend(data)
     
     data = sw_filter(data, sfreq, copy=False, n_jobs=n_jobs)
     
@@ -305,22 +311,41 @@ def detect_sw(data, sfreq=None, ch_names=None, half_wlen=(0.25, 1.),
         elif isinstance(data, (mne.io.Raw, mne.io.BaseRaw)):
             ch_data = data.copy().pick_channels([c]).get_data()
             
-        sw_info = swsd(ch_data, sfreq, half_wlen=half_wlen, neg_amp=neg_amp)
+        sw_info = swsd(ch_data, sfreq, half_wlen=half_wlen, neg_amp=neg_amp,
+                       pos_amp=pos_amp)
         
         chans_sw[c] = sw_info
+        
+    chans_sw = pd.DataFrame.from_dict(chans_sw)
             
-    return
+    return chans_sw
 
 
 if __name__ == '__main__':
-    raw_fname = 'test_data/n1_raw.fif'
+    # raw_fname = 'test_data/n1_raw.fif'
+    raw_fname = '/home/ruggero.basanisi/data/tweakdreams/mne/TD001/N1/raw/TD001-N1_prep-raw.fif'
+    
     raw = mne.io.read_raw_fif(raw_fname, preload=True)
+    raw = raw.pick_types(eeg=True)
     raw.resample(100., n_jobs=8)
-    raw._data = raw.get_data() * 10
+    # raw._data = raw.get_data() * 10
     
-    print(np.sum(np.abs(raw.get_data()))/raw.get_data().size)
+    # print(np.sum(np.abs(raw.get_data()))/raw.get_data().size)
     
-    chans = ['F4-C4','C4-A1']
+    # chans = ['F4-C4','C4-A1']
+    # raw.pick_channels(chans)
+    
+    chans = ['Z6Z','Z12Z']
     raw.pick_channels(chans)
+    df = detect_sw(raw, neg_amp=(40.e-6, 200.e-6), pos_amp=(20.e-6, 150e-6), 
+                   n_jobs=8)
     
-    detect_sw(raw, n_jobs=8)
+    # raw, ch_names, sfreq = envelope(raw, n_excl=1, n_kept=3)
+    # detect_sw(raw, sfreq=sfreq, n_jobs=8)
+    # df = detect_sw(raw, sfreq=sfreq, ch_names=ch_names, neg_amp=(40.e-6, 200.e-6), 
+    #                pos_amp=(20.e-6, 150e-6), n_jobs=8)
+
+    # detect_sw(raw, sfreq=sfreq, ch_names=ch_names, neg_amp=(5.e-5, 15.e-5), 
+    #           pos_amp=(0., 15e-5), n_jobs=8)
+    
+    df.to_csv('/home/ruggero.basanisi/results/sw.csv')
