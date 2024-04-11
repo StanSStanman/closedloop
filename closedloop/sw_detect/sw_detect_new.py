@@ -39,12 +39,25 @@ def noout_detrend(data, perc=99.95):
     return data
 
 
-def detrend(data):
+# def detrend(data):
+#     # data should be (nchans, ntimes)            
+#     if isinstance(data, (mne.io.Raw, mne.io.BaseRaw)):
+#         data._data = data.get_data() - data.get_data().mean(-1, keepdims=True)
+#     elif isinstance(data, (np.ndarray)):
+#         data = data - data.mean(-1, keepdims=True)
+#     else:
+#         raise TypeError('data should be a mne Raw or numpy array type object')
+    
+#     return data
+
+
+def detrend(data, type='linear', bp=0):
     # data should be (nchans, ntimes)            
     if isinstance(data, (mne.io.Raw, mne.io.BaseRaw)):
-        data._data = data.get_data() - data.get_data().mean(-1, keepdims=True)
+        data._data = sp.signal.detrend(data.get_data(), axis=-1, type=type, 
+                                       bp=bp)
     elif isinstance(data, (np.ndarray)):
-        data = data - data.mean(-1, keepdims=True)
+        data = sp.signal.detrend(data, axis=-1, type=type, bp=bp)
     else:
         raise TypeError('data should be a mne Raw or numpy array type object')
     
@@ -322,8 +335,8 @@ def detect_sw(data, sfreq=None, ch_names=None, half_wlen=(0.25, 1.),
 
 
 if __name__ == '__main__':
-    # raw_fname = 'test_data/n1_raw.fif'
-    raw_fname = '/home/ruggero.basanisi/data/tweakdreams/mne/TD001/N1/raw/TD001-N1_prep-raw.fif'
+    raw_fname = 'test_data/n1_raw.fif'
+    # raw_fname = '/home/ruggero.basanisi/data/tweakdreams/mne/TD001/N1/raw/TD001-N1_prep-raw.fif'
     
     raw = mne.io.read_raw_fif(raw_fname, preload=True)
     raw = raw.pick_types(eeg=True)
@@ -335,17 +348,20 @@ if __name__ == '__main__':
     # chans = ['F4-C4','C4-A1']
     # raw.pick_channels(chans)
     
-    chans = ['Z6Z','Z12Z']
-    raw.pick_channels(chans)
-    df = detect_sw(raw, neg_amp=(40.e-6, 200.e-6), pos_amp=(20.e-6, 150e-6), 
-                   n_jobs=8)
+    # chans = ['Z6Z','Z12Z']
+    # raw.pick_channels(chans)
+    # df = detect_sw(raw, neg_amp=(40.e-6, 200.e-6), pos_amp=(20.e-6, 150e-6), 
+    #                n_jobs=8)
     
-    # raw, ch_names, sfreq = envelope(raw, n_excl=1, n_kept=3)
+    raw, ch_names, sfreq = envelope(raw, n_excl=1, n_kept=3)
     # detect_sw(raw, sfreq=sfreq, n_jobs=8)
-    # df = detect_sw(raw, sfreq=sfreq, ch_names=ch_names, neg_amp=(40.e-6, 200.e-6), 
-    #                pos_amp=(20.e-6, 150e-6), n_jobs=8)
+    df = detect_sw(raw, sfreq=sfreq, ch_names=ch_names, 
+                   neg_amp=(40.e-6, 200.e-6), pos_amp=(20.e-6, 150e-6), 
+                   n_jobs=8)
 
     # detect_sw(raw, sfreq=sfreq, ch_names=ch_names, neg_amp=(5.e-5, 15.e-5), 
     #           pos_amp=(0., 15e-5), n_jobs=8)
-    
-    df.to_csv('/home/ruggero.basanisi/results/sw.csv')
+    import os
+    import os.path as op
+    # df.to_csv('/home/ruggero.basanisi/results/sw.csv')
+    df.to_csv(op.join(os.getcwd(), 'closedloop/sw_detect/envelope_sw.csv'))
