@@ -171,10 +171,10 @@ if __name__ == '__main__':
     n_jobs = -1
     # vep_dir = '/home/jerry/python_projects/public/VEP_atlas_shared'
 
-    compute_freesurfer(fs_home, sbj_dir, sbj, mri, n_jobs)
+    # compute_freesurfer(fs_home, sbj_dir, sbj, mri, n_jobs)
     # compute_VEP(vep_dir, fs_home, sbj_dir, sbj)
     # compute_watershed_bem(fs_home, sbj_dir, sbj)
-    # compute_scalp_meshes(fs_home, sbj_dir, sbj)
+    compute_scalp_meshes(fs_home, sbj_dir, sbj)
     'mri_watershed -useSRAS -atlas -surf $SUBJECTS_DIR/$SUBJECT/bem/watershed $SUBJECTS_DIR/$SUBJECT/mri/T1.mgz $SUBJECTS_DIR/$SUBJECT/bem/TD001-head.fif'
     'mri_watershed -useSRAS -atlas -surf /home/jerry/freesurfer/TweakDreams/TD001/bem/watershed /home/jerry/freesurfer/TweakDreams/TD001/mri/T1.mgz /home/jerry/freesurfer/TweakDreams/TD001/bem/TD001-head.fif'
     # import mne
