@@ -105,7 +105,7 @@ def signal_processing_pipeline(prj_data, subject, night, aw=None):
                   picks=None, eve_id=None, tmin=-2., tmax=2., 
                   fmin=.3, fmax=40., baseline=None)
         
-        rsw = realign_sw_epo(epo_fname, eve_fname)
+        rsw = realign_sw_epo(epo_fname, eve_fname, n_jobs=64)
         
         if rsw is not None:
             gt, bt, mnch, swt = rsw
