@@ -1,8 +1,12 @@
+import os
+import os.path as op
 import numpy as np
 import scipy as sp
 import pandas as pd
 import mne
 import warnings
+from ast import literal_eval
+from staging import crop_hypno
 
 
 def envelope(data, n_excl=1, n_kept=3):
@@ -37,18 +41,6 @@ def noout_detrend(data, perc=99.95):
         raise TypeError('data should be a mne Raw or numpy array type object')
     
     return data
-
-
-# def detrend(data):
-#     # data should be (nchans, ntimes)            
-#     if isinstance(data, (mne.io.Raw, mne.io.BaseRaw)):
-#         data._data = data.get_data() - data.get_data().mean(-1, keepdims=True)
-#     elif isinstance(data, (np.ndarray)):
-#         data = data - data.mean(-1, keepdims=True)
-#     else:
-#         raise TypeError('data should be a mne Raw or numpy array type object')
-    
-#     return data
 
 
 def detrend(data, type='linear', bp=0):
@@ -96,81 +88,37 @@ def sw_filter(data, sfreq=None, copy=False, n_jobs='cuda'):
     elif sfreq is None and isinstance(data, (mne.io.Raw, mne.io.BaseRaw)):
         sfreq = data.info['sfreq']
     
-    wp = np.array([.5, 4.]) / (sfreq / 2) # pass bands
-    ws = np.array([.1, 10.]) / (sfreq / 2) # stop bands
-    iir_params = {
-        'ftype': 'cheby2',
-        'rp': 3.,
-        'rs': 10.,
-        'gpass': 3.,
-        'gstop': 10.,
-        'output': 'sos'
-    }
-    iir_filt = mne.filter.construct_iir_filter(iir_params=iir_params, 
-                                               f_pass=wp, f_stop=ws, 
-                                               sfreq=sfreq, btype='bandpass',
-                                               return_copy=copy)
+    wp = np.array([.5, 4.]) #/ (sfreq / 2) # pass bands
+    ws = np.array([.1, 10.]) #/ (sfreq / 2) # stop bands
+    Rp, Rs = 3, 10
+    n, Wn = sp.signal.cheb2ord(wp, ws, Rp, Rs, analog=False, fs=sfreq)
+    bbp, abp = sp.signal.cheby2(n, Rs, Wn, btype='bandpass', analog=False, 
+                                output='ba', fs=sfreq)
+    
+    # The parameters that we used for the IIR filter can be summarized as
+    # fillow (for MNE users)
+    # iir_params = {
+    #     'ftype': 'cheby2',
+    #     'rp': 3.,
+    #     'rs': 10.,
+    #     'gpass': 3.,
+    #     'gstop': 10.,
+    #     'output': 'ba'
+    # }
     
     if isinstance(data, (np.ndarray)):
-        # filt_data = mne.filter.filter_data(data, sfreq, l_freq=.5, h_freq=4., 
-        #                                    picks=None, filter_length='auto',
-        #                                    n_jobs=n_jobs, method='iir',
-        #                                    iir_params=iir_filt, copy=copy, 
-        #                                    phase='zero', pad='reflect_limited')
-        filt_data = mne.filter.filter_data(data, sfreq, l_freq=.5, h_freq=4., 
-                                           picks=None, filter_length='auto',
-                                           n_jobs=n_jobs, method='fir',
-                                           phase='zero', pad='reflect_limited')
+        filt_data = sp.signal.filtfilt(bbp, abp, data, axis=-1)
+        
     elif isinstance(data, (mne.io.Raw, mne.io.BaseRaw)):
-        # filt_data = data.filter(l_freq=.5, h_freq=4., picks=None, 
-        #                         filter_length='auto', n_jobs=n_jobs, 
-        #                         method='iir', iir_params=iir_filt, 
-        #                         phase='zero', pad='reflect_limited')
-        filt_data = data.filter(l_freq=.5, h_freq=4., picks=None, 
-                                filter_length='auto', n_jobs=n_jobs, 
-                                method='fir', phase='zero', 
-                                pad='reflect_limited')
+        filt_data = data.copy()
+        filt_data._data = sp.signal.filtfilt(bbp, abp, data.get_data(), 
+                                             axis=-1)
     
     return filt_data
-    
-    
-def zerocross(ch_data):
-    
-    ch_data = ch_data.squeeze()
-    assert ch_data.ndim == 1, 'too many dimensions for single channel data'
-    
-    pos_idx = np.zeros_like(ch_data)
-    pos_idx[ch_data>0] = 1
-    difference = np.diff(pos_idx, n=1)
-    poscross = np.where(difference==1)[0]
-    negcross = np.where(difference==-1)[0]
-    # TODO: Check these steps, they can mess easily up with positions
-    smoothed = np.convolve(ch_data, np.ones(5) / 5, mode='same')
-    pos_idx = np.zeros_like(smoothed)
-    pos_idx[smoothed>0] = 1
-    difference = np.diff(pos_idx, n=1)
-    peaks = np.where(difference==-1)[0] + 1
-    troughs = np.where(difference==1)[0] + 1
-    # peaks = peaks[ch_data[peaks]<0]
-    peaks = peaks[ch_data[peaks]>=0]
-    # troughs = troughs[ch_data[troughs>0]]
-    troughs = troughs[ch_data[troughs]<=0]
-    # Makes negcross and poscross same size to start
-    # TODO: check these steps too, maybe can be redefined if the only purpose 
-    # is to define a starting point of the array
-    if negcross[0] < poscross[0]:
-        start = 1
-    else:
-        start = 2
-        
-    if start == 2:
-        poscross = poscross[1:] 
-        
-    return negcross, poscross, troughs, peaks, start
 
 
-def swsd(ch_data, sfreq, half_wlen=(.125, 1.), neg_amp=(40.e-5, 200.e-5),
-         pos_amp=(10e-5, 150e-5)):
+def swsd(ch_data, sfreq, hypno=None, stgs=[2, 3], half_wlen=(.125, 1.), 
+         neg_amp=(40.e-6, 200.e-6), pos_amp=(10e-6, 150e-6)):
     
     ch_data = ch_data.squeeze()
     assert ch_data.ndim == 1, 'too many dimensions for single channel data'
@@ -215,6 +163,11 @@ def swsd(ch_data, sfreq, half_wlen=(.125, 1.), neg_amp=(40.e-5, 200.e-5),
         
     for inzx, nzx in enumerate(negzx[:-1]):
         # nzx is the position of the first negative zero-crossing
+        if hypno is not None:
+            if hypno[nzx] in stgs:
+                pass
+            else:
+                continue
         # w_end is the end of the wave (second negative zero-crossing)
         w_end = negzx[inzx+1]
         # pzx is the positive zero-crossing in between the negative two
@@ -278,13 +231,24 @@ def swsd(ch_data, sfreq, half_wlen=(.125, 1.), neg_amp=(40.e-5, 200.e-5),
         sw_info['maxpospkamp'].append(float(max_ppk_amp.astype('float32')))
         sw_info['mxdnslp'].append(float(dwn_slope))
         sw_info['mxupslp'].append(float(up_slope))
+        
+    import matplotlib.pyplot as plt
+    plt.plot(ch_data.squeeze(), color='b')
+    if hypno is not None:
+        plt.plot(hypno*1e-5)
+    plt.scatter(sw_info['maxnegpk'], ch_data.squeeze()[sw_info['maxnegpk']], color='r')
+    plt.hlines(-neg_amp[0], 0, len(ch_data.squeeze()), color='r', ls='--')
+    plt.hlines(-neg_amp[1], 0, len(ch_data.squeeze()), color='r', ls='--')
+    plt.hlines(pos_amp[0], 0, len(ch_data.squeeze()), color='g', ls='--')
+    plt.hlines(pos_amp[1], 0, len(ch_data.squeeze()), color='g', ls='--')
+    # plt.show(block=False)
     
     return sw_info
     
 
-def detect_sw(data, sfreq=None, ch_names=None, half_wlen=(0.25, 1.), 
-              neg_amp=(40.e-5, 200.e-5), pos_amp=(10e-5, 150e-5), 
-              n_jobs='cuda'):
+def detect_sw(data, sfreq=None, hypno=None, stgs=[2, 3], ch_names=None, 
+              half_wlen=(0.25, 1.), neg_amp=(40.e-6, 200.e-6), 
+              pos_amp=(10e-6, 150e-6), n_jobs='cuda'):
     
     if isinstance(data, (mne.io.Raw, mne.io.BaseRaw)):
         data = data.pick(['eeg'])
@@ -311,7 +275,8 @@ def detect_sw(data, sfreq=None, ch_names=None, half_wlen=(0.25, 1.),
         assert len(ch_names) == data.get_data().shape[0], ('mismatch in between '/
             'length of ch_names and number of channels in data')
     
-    data = detrend(data)
+    # data = detrend(data, type='linear')
+    data = detrend(data, type='constant')
     # data = noout_detrend(data)
     
     data = sw_filter(data, sfreq, copy=False, n_jobs=n_jobs)
@@ -324,8 +289,8 @@ def detect_sw(data, sfreq=None, ch_names=None, half_wlen=(0.25, 1.),
         elif isinstance(data, (mne.io.Raw, mne.io.BaseRaw)):
             ch_data = data.copy().pick_channels([c]).get_data()
             
-        sw_info = swsd(ch_data, sfreq, half_wlen=half_wlen, neg_amp=neg_amp,
-                       pos_amp=pos_amp)
+        sw_info = swsd(ch_data, sfreq, hypno, stgs, half_wlen=half_wlen, 
+                       neg_amp=neg_amp, pos_amp=pos_amp)
         
         chans_sw[c] = sw_info
         
@@ -334,34 +299,165 @@ def detect_sw(data, sfreq=None, ch_names=None, half_wlen=(0.25, 1.),
     return chans_sw
 
 
-if __name__ == '__main__':
-    raw_fname = 'test_data/n1_raw.fif'
-    # raw_fname = '/home/ruggero.basanisi/data/tweakdreams/mne/TD001/N1/raw/TD001-N1_prep-raw.fif'
+def check_envelope_sw(raw, sw_fname):
+    raw.load_data()
+    raw.pick_types(eeg=True)
+    raw.filter(.5, 4., n_jobs='cuda')
     
-    raw = mne.io.read_raw_fif(raw_fname, preload=True)
-    raw = raw.pick_types(eeg=True)
-    raw.resample(100., n_jobs=8)
-    # raw._data = raw.get_data() * 10
+    sw = pd.read_csv(sw_fname, sep=',', header=0, index_col=0)
     
-    # print(np.sum(np.abs(raw.get_data()))/raw.get_data().size)
+    envl = sw['envelope']
+    tps = np.array(literal_eval(envl['maxnegpk']), dtype=int)
+    zrs = np.zeros_like(tps)
+    evc = np.full_like(tps, 512)
     
-    # chans = ['F4-C4','C4-A1']
-    # raw.pick_channels(chans)
+    events = np.stack((tps, zrs, evc), axis=-1)
     
-    # chans = ['Z6Z','Z12Z']
-    # raw.pick_channels(chans)
-    # df = detect_sw(raw, neg_amp=(40.e-6, 200.e-6), pos_amp=(20.e-6, 150e-6), 
-    #                n_jobs=8)
+    epochs = mne.Epochs(raw, events, event_id=None, tmin=-5, tmax=5., 
+                        baseline=None, picks=None, preload=True, 
+                        reject=None, flat=None, proj=True, decim=1, 
+                        reject_tmin=None, reject_tmax=None, detrend=None, 
+                        on_missing='raise', reject_by_annotation=True, 
+                        metadata=None, event_repeated='error', verbose=None)
+    epochs.crop(-.04, .04)
+    good_sw, bad_sw = [], []
+    upb = -30e-6
+    lwb = -180e-6
     
-    raw, ch_names, sfreq = envelope(raw, n_excl=1, n_kept=3)
-    # detect_sw(raw, sfreq=sfreq, n_jobs=8)
-    df = detect_sw(raw, sfreq=sfreq, ch_names=ch_names, 
-                   neg_amp=(40.e-6, 200.e-6), pos_amp=(20.e-6, 150e-6), 
-                   n_jobs=8)
+    for i, e in enumerate(epochs):
+        
+        avgs = e.mean(-1).squeeze()
+        
+        if np.sum(np.logical_and(avgs > lwb, avgs < upb)) >= 2:
+            if np.sum(avgs < lwb) >= 3:
+                continue
+            else:
+                good_sw.append(i)
+    
+    return
+            
 
-    # detect_sw(raw, sfreq=sfreq, ch_names=ch_names, neg_amp=(5.e-5, 15.e-5), 
-    #           pos_amp=(0., 15e-5), n_jobs=8)
-    import os
-    import os.path as op
-    # df.to_csv('/home/ruggero.basanisi/results/sw.csv')
-    df.to_csv(op.join(os.getcwd(), 'closedloop/sw_detect/envelope_sw.csv'))
+def inspect_sw(raw, sws, sfreq=None, channels=['envelope'], align='maxnegpk', 
+               twin=(-2., 2.), tstep=.5):
+    import matplotlib.pyplot as plt
+    
+    if sfreq is None:
+        if isinstance(raw, (mne.io.Raw, mne.io.BaseRaw)):
+            sfreq = raw.info['sfreq']
+        else:
+            raise TypeError('sfreq should be specified unless'/
+                            'raw is a mne object')
+    
+    raw.pick_types(eeg=True)
+    envp, _, _ = envelope(raw)
+    
+    if channels is None:
+        channels = sws.keys()
+        
+    for ch in channels:
+        ch_sw = sws[ch]
+        tps = np.array(literal_eval(ch_sw[align]), dtype=int)
+        for tp in tps:
+            negtp = np.arange(twin[0], 1e-3) * sfreq
+            postp = np.arange(0., twin[1]+1e-3) * sfreq
+            
+            
+def compute_stage_envelope(prep_fname, stg_fname):
+    prep = mne.io.read_raw_fif(prep_fname, preload=True)
+    
+    eve, ev_dict = mne.events_from_annotations(prep)
+    wake_id = [ev_dict[w] for w in ev_dict.keys() 
+                if w=='Stimulus/s30']
+    if len(wake_id) == 1:
+        wake_tp = eve[np.where(eve[:, -1]==wake_id[0]), 0][0]
+        wake_tp -= prep._first_samps
+        if wake_tp[0] >= len(prep.times):
+            tmax = prep.times[-1]
+        else:
+            tmax = prep.times[wake_tp[0]]
+        prep.crop(tmin=0., tmax=tmax)
+    
+    prep = prep.pick_types(eeg=True)
+    prep.filter(.5, 40., n_jobs='cuda')
+    
+    hypno = crop_hypno(stg_fname, prep.info['sfreq'], 
+                        prep.first_samp, prep.last_samp)
+    
+    envp, ch_names, sfreq = envelope(prep, n_excl=1, n_kept=3)
+    
+    return envp, ch_names, sfreq, hypno
+    
+    
+            
+            
+if __name__ == '__main__':
+    
+    prj_data = '/home/ruggero.basanisi/data/tweakdreams'
+
+    data_dir = prj_data
+    subjects = ['TD001']
+    nights = ['N3']
+    
+    for sbj in subjects:
+        for n in nights:
+            
+            prep_dir = op.join(prj_data, 'mne', '{0}', '{1}', 
+                                'prep').format(sbj, n)
+            eve_dir = op.join(prj_data, 'mne', '{0}', '{1}', 
+                                'eve').format(sbj, n)
+            
+            stg_fname = op.join(eve_dir, 'hypnogram.npy')
+            
+            aw = [a for a in os.listdir(prep_dir) if a.startswith('aw_')]
+            aw.sort()
+            # aw = ['aw_2']
+            
+            for _aw in aw:
+                
+                prep_fname = op.join(prep_dir, _aw, f'{sbj}_{n}_prep-raw.fif')
+                
+                raw = mne.io.read_raw_fif(prep_fname, preload=True)
+                # Applying reference online
+                # raw.set_eeg_reference(ref_channels=['L4H', 'R4H'])
+                
+                eve, ev_dict = mne.events_from_annotations(raw)
+                wake_id = [ev_dict[w] for w in ev_dict.keys() 
+                           if w=='Stimulus/s30']
+                if len(wake_id) == 1:
+                    wake_tp = eve[np.where(eve[:, -1]==wake_id[0]), 0][0]
+                    wake_tp -= raw._first_samps
+                    if wake_tp[0] >= len(raw.times):
+                        tmax = raw.times[-1]
+                    else:
+                        tmax = raw.times[wake_tp[0]]
+                    raw.crop(tmin=0., tmax=tmax)
+                
+                raw = raw.pick_types(eeg=True)
+                # raw.resample(100., n_jobs=8)
+                raw.filter(.5, 40., n_jobs='cuda')
+                
+                hypno = crop_hypno(stg_fname, raw.info['sfreq'], 
+                                   raw.first_samp, raw.last_samp)
+                
+                raw, ch_names, sfreq = envelope(raw, n_excl=1, n_kept=3)
+                
+                # FIrst attempt, extracting less SW
+                # df = detect_sw(raw, sfreq=sfreq, hypno=hypno, stgs=[2, 3], 
+                #                ch_names=ch_names, neg_amp=(10.e-6, 100.e-6), 
+                #                pos_amp=(None, 50.e-6), #(20.e-6, 150e-6), 
+                #                n_jobs=16)
+                
+                # Trying to extend sw detection range after coding sw_correct, 
+                # if it doesn't work return to previous lines
+                df = detect_sw(raw, sfreq=sfreq, hypno=hypno, stgs=[2, 3], 
+                               ch_names=ch_names, half_wlen=(0.12, 1.05),
+                               neg_amp=(5.e-6, 200.e-6), 
+                               pos_amp=(0, 100.e-6),
+                               n_jobs=16)
+                
+                eve_dir = op.join(prj_data, 'mne', '{0}', '{1}', 
+                                  'eve', _aw).format(sbj, n)
+                os.makedirs(eve_dir, exist_ok=True)
+                csv_fname = op.join(eve_dir, 'envelope_sw.csv')
+                df.to_csv(csv_fname)
+                print('Saved to:', csv_fname)
