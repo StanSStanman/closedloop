@@ -260,3 +260,5 @@ pyvenv.cfg
 etc
 share
 *.fif
+*.txt
+*.sh
