@@ -19,7 +19,7 @@ class thr_detect:
         self.refractory = refractory
         
         self.chunk = None
-        self.n_samples = int(sfreq * twin_len)
+        # self.n_samples = int(sfreq * twin_len)
         self.listening = True
         # Events:
         # - 0 = threshold pass
@@ -28,6 +28,15 @@ class thr_detect:
         self.events = []
         # current 'time'
         self.ct = 0
+        # self.check_time = int(sfreq * delays[0])
+
+        self.prepared = False
+
+
+    def prepare(self):
+        self.n_samples = int(self.sfreq * self.twin_len)
+        self.check_time = int(self.sfreq * self.delays[0])
+        self.prepared = False
         
 
     def d_filter(self):
@@ -46,7 +55,11 @@ class thr_detect:
         # developed on simulated time, should be adapted on real time
         self.listening = False
         
-        all_delays = self.delays + [self.refractory]
+        # deliver a trigger instantly
+        self.events.append([1, self.ct])
+        # print(self.events[-1])
+
+        all_delays = self.delays[1:] + [self.refractory]
         for i, d in enumerate(all_delays):
             t_start = self.ct
             d -= self.t_diff
@@ -54,16 +67,19 @@ class thr_detect:
             while self.ct < t_start + d_tp:
                 continue
             # deliver the trigger
-            if i != len(all_delays) -1:
-                self.events.append([i + 1, self.ct])
+            if i != len(all_delays) - 1:
+                self.events.append([i + 2, self.ct])
 
-                print(self.events[-1])
+                # print(self.events[-1])
 
         self.listening = True
         return
         
     
     def read_buffer(self, d_buffer):
+        if self.prepared is False:
+            self.prepare()
+
         self.ct += d_buffer.shape[1]
 
         if self.chunk is None:
@@ -74,14 +90,13 @@ class thr_detect:
         if self.chunk.shape[-1] > self.n_samples:
             self.chunk = self.chunk[:, -self.n_samples:]
 
-
         # refr_tp = self.refractory * self.sfreq
 
         if self.listening and self.chunk.shape[-1] >= self.n_samples:
 
             f_chunk = self.d_filter()
 
-            low_idx = np.where(f_chunk[:, -d_buffer.shape[1]:] <= self.thrs)
+            low_idx = np.where(f_chunk[:, -self.check_time:-(self.check_time - d_buffer.shape[1])] <= self.thrs)
             if len(low_idx[0]) > 0:
                 thr_pass = low_idx[1][0]
                 self.t_diff = (d_buffer.shape[1] - thr_pass) / self.sfreq
@@ -91,13 +106,23 @@ class thr_detect:
                 self.trig_thr.start()
 
         return
+    
+
+    def stop(self):
+        self.ct += 1000
+        self.trig_thr.join()
+        return
+
 
 if __name__ == '__main__':
     import os.path as op
     import mne
     import time
     from streamer_class import data_streamer
+    from util import crop_events
     import os 
+
+    tmin, tmax = 7200, 7260
 
     subjects = ['n1', 'n2', 'n3', 'n4', 'n5', 'n10']
     path = '/home/jerry/python_projects/space/closedloop/test_data'
@@ -112,6 +137,9 @@ if __name__ == '__main__':
     new_chan_data = mne.io.RawArray(data=new_chan_data, info=info, first_samp=0)
     raw.add_channels([new_chan_data], force_update_info=True)
 
+    raw.crop(tmin, tmax)
+    events = crop_events(events, 500, tmin, tmax)
+
     stream = data_streamer(raw, events)
     # stream.chans_sel(['F1-F3','C4-A1'])
     stream.chans_sel(['F4-A1'])
@@ -125,11 +153,10 @@ if __name__ == '__main__':
     # figure.figsize = (15,9)
     # figure.stages = True
     listener = thr_detect()
-    listener.thrs = -40e-6
-    listener.twin_len = 5.
+    listener.thrs = -65e-6 #-55e-6
+    listener.twin_len = 15.
     listener.fil_low = .3
     listener.fil_high = 1.5
-
 
     t_start = time.time()
     n_chunks = int(raw.times[-1] / (stream.buffer_len / 1000))
@@ -141,7 +168,8 @@ if __name__ == '__main__':
         signal = stream.stream()
         listener.read_buffer(signal)
         data.append(signal)
-    listener.trig_thr.join()
+    # listener.trig_thr.join()
+    listener.stop()
     t_end = time.time()
     print('Total time:', t_end - t_start)
     print('Average time:', (t_end - t_start) / n_chunks)

@@ -25,7 +25,7 @@ def compute_forward_model(info_fname, trans_fname, src_fname,
     fwd = mne.make_forward_solution(info=info, trans=trans,
                                     src=src, bem=bem,
                                     meg=False, eeg=True,
-                                    mindist=5.0, n_jobs=-1, verbose=False)
+                                    mindist=0.0, n_jobs=-1, verbose=False)
 
     mne.write_forward_solution(fwd_fname, fwd, overwrite=True)
 
@@ -33,11 +33,32 @@ def compute_forward_model(info_fname, trans_fname, src_fname,
 
 
 if __name__ == '__main__':
-    info_fname = '/media/jerry/ruggero/dataset_td02/mne/TD001/n1/prep/aw0/TD001-epo.fif'
-    trans_fname = '/media/jerry/ruggero/dataset_td02/mne/TD001/n1/trans/TD001-trans.fif'
-    bem_fname = '/media/jerry/ruggero/dataset_td02/mne/TD001/n1/bem/TD001-bem-sol.fif'
-    src_fname = '/media/jerry/ruggero/dataset_td02/mne/TD001/n1/src/TD001-src.fif'
-    fwd_fname = '/media/jerry/ruggero/dataset_td02/mne/TD001/n1/fwd/TD001-fwd.fif'
     
-    compute_forward_model(info_fname, trans_fname, src_fname,
-                          bem_fname, fwd_fname)
+    import os
+    import os.path as op
+    
+    prj_data = '/home/ruggero.basanisi/data/tweakdreams'
+    
+    subjects = ['TD005']
+    nights = ['N1']
+    
+    for sbj in subjects:
+        for n in nights:
+            
+            info_dir = op.join(prj_data, 'mne', sbj, n, 'raw', 'aw_0')
+            trans_dir = op.join(prj_data, 'mne', sbj, n, 'trans')
+            bem_dir = op.join(prj_data, 'mne', sbj, n, 'bem')
+            src_dir = op.join(prj_data, 'mne', sbj, n, 'src')
+            fwd_dir = op.join(prj_data, 'mne', sbj, n, 'fwd')
+            
+            os.makedirs(fwd_dir, exist_ok=True)
+
+            # TODO correct all the raws filenames
+            info_fname = op.join(info_dir, f'{sbj}_{n}-raw.fif')
+            trans_fname = op.join(trans_dir, f'{sbj}_{n}-trans.fif')
+            bem_fname = op.join(bem_dir, f'{sbj}_{n}-bem-sol.fif')
+            src_fname = op.join(src_dir, f'{sbj}_{n}-src.fif')
+            fwd_fname = op.join(fwd_dir, f'{sbj}_{n}-fwd.fif')
+            
+            compute_forward_model(info_fname, trans_fname, src_fname,
+                                  bem_fname, fwd_fname)

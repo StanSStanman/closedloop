@@ -11,7 +11,10 @@ def read_raw(raw_dir, extension='', preload=False, return_fnames=False):
                                     '*{0}-eve.fif'.format(extension)))[0]
 
     raw = mne.io.read_raw_fif(raw_file, allow_maxshield=False, preload=preload)
-    eve = mne.read_events(eve_file)
+    try:
+        eve = mne.read_events(eve_file)
+    except Exception:
+        eve = None
 
     if return_fnames:
         return raw, eve, (raw_file, eve_file)
@@ -51,8 +54,6 @@ if __name__ == "__main__":
     data_dir = prj_data
     subjects = ['TD001']
     nights = ['N1']
-    # awakenings = ['aw_4','aw_5']
-    # awakenings = ['aw_5'] # TODO: change with a dir finder
 
     for sbj in subjects:
         for n in nights:
@@ -64,7 +65,3 @@ if __name__ == "__main__":
             raw, eve = resample_raw(raw, eve)
             end = time.time()
             print('Done in ', end-start, ' seconds.')
-            # 80s preload+cuda
-            # inf no_preload+cuda
-            # 222s preload+njobs64
-            # inf no_preload+njobs64

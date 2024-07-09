@@ -1,14 +1,12 @@
 import math
 import re
-
+import numpy as np
 import mne
 import pandas as pd
 import yasa
-from streamer_class import data_streamer
 from yasa import sw_detect
-import numpy as np
-
-from phase import convert_sec_to_timestamp
+from closedloop.streamer_class import data_streamer
+from closedloop.phase import convert_sec_to_timestamp
 
 
 def correct_slow_waves(filtered_signal: np.ndarray, events: pd.DataFrame, sf: int) -> pd.DataFrame:
@@ -62,8 +60,8 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import seaborn as sns
 
-    RAW_DATA_FILE = '../resources/n1_raw.fif'
-    RAW_EVE_FILE = '../resources/n1_eve.fif'
+    RAW_DATA_FILE = './test_data/n1_raw.fif'
+    RAW_EVE_FILE = './test_data/n1_eve.fif'
     SF = 500
 
     START = 0
@@ -128,7 +126,7 @@ if __name__ == '__main__':
 
     times = []
     pattern = r'\[\s*1\s+(\d+)\]'
-    with open('../resources/n1_sw.txt', 'r') as file:
+    with open('./test_data/n1_sw.txt', 'r') as file:
         lines = file.readlines()
         for line in lines:
             match = re.search(pattern, line)
@@ -139,10 +137,13 @@ if __name__ == '__main__':
                 print("No match found.")
 
     print(times)
-
+    print(phase, '\n')
     from evaluation import get_online_detection_evaluation
 
     accuracy, frequencies = get_online_detection_evaluation(phase, times)
+    
+    print(accuracy)
+    print(frequencies)
 
     # Compute pie slices
     N = len(frequencies)

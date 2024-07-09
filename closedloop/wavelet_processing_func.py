@@ -1,13 +1,12 @@
 import matplotlib.pyplot as plt
 import mne
 import pandas as pd
-from streamer_class import data_streamer
 from yasa import sw_detect
 import numpy as np
 import pywt
-from streamer_class import data_streamer
+from closedloop.streamer_class import data_streamer
 import seaborn as sns
-import pywt
+
 
 def get_slow_waves(signal: np.ndarray, hypno: np.ndarray, sf: int) -> pd.DataFrame:
     """

@@ -1,5 +1,4 @@
 from typing import Tuple, List
-
 import numpy as np
 
 
@@ -23,3 +22,19 @@ def find_value_indices(signal: np.ndarray, target_values) -> List[Tuple[int, int
             start = i + 1
 
     return nearby_indices
+
+
+def crop_events(events, sfreq, tmin=None, tmax=None):
+    if tmax is not None:
+        if len(np.where(events[:, 0] > tmax * sfreq)[0]) != 0:
+            idx = np.where(events[:, 0] > tmax * sfreq)[0][0]
+            events = events[:idx + 1, :]
+            events[-1, 0] = tmax * sfreq
+    if tmin is not None:
+        if len(np.where(events[:, 0] <= tmin*sfreq)[0]) != 0:
+            idx = np.where(events[:, 0] <= tmin*sfreq)[0][-1]
+            events = events[idx:, :]
+            events[:, 0] = events[:, 0] - (tmin * sfreq)
+            events[0, 0] = 0
+    
+    return events

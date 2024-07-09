@@ -6,13 +6,14 @@ import xarray as xr
 import time
 # from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
-from visualize import online_vis
+from closedloop.visualize import online_vis
+from closedloop.util import crop_events
 
 
 class data_streamer:
 
     def __init__(self, raw, events):
-        assert isinstance(raw, mne.io.fiff.raw.Raw), 'raw shoul be a mne.Raw \
+        assert isinstance(raw, (mne.io.fiff.raw.Raw, mne.io.RawArray)), 'raw shoul be a mne.Raw \
         object'
 
         if isinstance(events, np.ndarray):
@@ -88,9 +89,13 @@ if __name__ == '__main__':
     raw_fname = op.join(path, '{0}_raw.fif')
     eve_fname = op.join(path, '{0}_eve.fif')
 
+    tmin = 7200
+    tmax = 7260
+
     raw = mne.io.read_raw_fif(raw_fname.format(subjects[0]))
-    raw.crop(tmin=7200)
+    raw.crop(tmin=tmin, tmax=tmax)
     events = mne.read_events(eve_fname.format(subjects[0]))
+    events = crop_events(events, 500, tmin, tmax)
 
     stream = data_streamer(raw, events)
     stream.chans_sel(['F4-C4', 'C4-A1'])
@@ -105,8 +110,8 @@ if __name__ == '__main__':
     figure.stages = True
 
     t_start = time.time()
-    # n_chunks = int(raw.times[-1] / (stream.buffer_len / 1000))
-    n_chunks = 50000
+    n_chunks = int(raw.times[-1] / (stream.buffer_len / 1000))
+    # n_chunks = 50000
     print(n_chunks)
 
     data = []
