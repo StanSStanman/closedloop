@@ -160,25 +160,28 @@ def compute_scalp_meshes(freesurfer_home, subjects_dir, subject_name):
 
 
 if __name__ == '__main__':
-    # fs_home = '/usr/local/freesurfer/7.3.2'
-    fs_home = '/usr/local/freesurfer/7.4.1'
-    # sbj_dir = '/home/jerry/freesurfer/TweakDreams'
-    sbj_dir = '/media/jerry/ruggero/tweakdreams/freesurfer'
-    sbj = 'TD001'
-    mri = '/media/jerry/ruggero/dataset_td02/mri/nifti/' + \
-        'sub-td001_ses-d01_mri.nii'
-    # mri = '/media/jerry/ruggero/tweakdreams/freesurfer/TD001/sub-td001_ses-d01_mri.nii'
-    n_jobs = -1
-    # vep_dir = '/home/jerry/python_projects/public/VEP_atlas_shared'
+    
+    prj_data = '/home/ruggero.basanisi/data/tweakdreams'
+    fs_home = '/home/programmi/freesurfer'
+    
+    # subjects = ['TD001', 'TD002', 'TD003', 'TD005', 'TD006', 'TD007', 'TD008',
+    #             'TD009', 'TD010', 'TD011', 'TD012', 'TD015', 'TD018', 'TD019', 
+    #             'TD021', 'TD022', 'TD025', 'TD026', 'TD027', 'TD028', 'TD030', 
+    #             'TD031', 'TD0032', 'TD034',]
+    
+    subjects = ['TD010', 'TD011']
 
-    compute_freesurfer(fs_home, sbj_dir, sbj, mri, n_jobs)
-    # compute_VEP(vep_dir, fs_home, sbj_dir, sbj)
-    # compute_watershed_bem(fs_home, sbj_dir, sbj)
-    # compute_scalp_meshes(fs_home, sbj_dir, sbj)
-    'mri_watershed -useSRAS -atlas -surf $SUBJECTS_DIR/$SUBJECT/bem/watershed $SUBJECTS_DIR/$SUBJECT/mri/T1.mgz $SUBJECTS_DIR/$SUBJECT/bem/TD001-head.fif'
-    'mri_watershed -useSRAS -atlas -surf /home/jerry/freesurfer/TweakDreams/TD001/bem/watershed /home/jerry/freesurfer/TweakDreams/TD001/mri/T1.mgz /home/jerry/freesurfer/TweakDreams/TD001/bem/TD001-head.fif'
-    # import mne
-    # mne.bem.make_watershed_bem('TD001_backup', sbj_dir, overwrite=True, 
-    #                            volume='T1', atlas=True, gcaatlas=False, 
-    #                            preflood=15., show=True, copy=True, T1=True,
-    #                            brainmask='/home/jerry/freesurfer/TweakDreams/TD001_backup/mri/brainmask.mgz')
+    sbj_dir = op.join(prj_data, 'freesurfer')
+    n_jobs = 32
+    
+    for sbj in subjects:
+        mri_fname = op.join(prj_data, 'mri', 
+                            f'sub-{sbj.lower()}_ses-d01_mri.nii')
+
+        compute_freesurfer(fs_home, sbj_dir, sbj, mri_fname, n_jobs)
+        compute_watershed_bem(fs_home, sbj_dir, sbj)
+        compute_scalp_meshes(fs_home, sbj_dir, sbj)
+    
+    # 'mri_watershed -useSRAS -atlas -surf $SUBJECTS_DIR/$SUBJECT/bem/watershed $SUBJECTS_DIR/$SUBJECT/mri/T1.mgz $SUBJECTS_DIR/$SUBJECT/bem/TD005-head.fif'
+    # 'mri_watershed -useSRAS -atlas -surf /home/jerry/freesurfer/TweakDreams/TD005/bem/watershed /home/jerry/freesurfer/TweakDreams/TD005/mri/T1.mgz /home/jerry/freesurfer/TweakDreams/TD005/bem/TD001-head.fif'
+

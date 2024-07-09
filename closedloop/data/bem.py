@@ -19,9 +19,23 @@ def compute_bem(subject, sbj_dir, bem_fname):
 
 
 if __name__ == '__main__':
+    import os
+    import os.path as op
     
-    subject = 'TD001'
-    subjects_dir = '/home/jerry/freesurfer/TweakDreams'
-    bem_fname = ('/media/jerry/ruggero/dataset_td02/mne/TD001/n1/bem/'
-                 'TD001-bem-sol.fif')
-    compute_bem(subject, subjects_dir, bem_fname)
+    prj_data = '/home/ruggero.basanisi/data/tweakdreams'
+    
+    subjects = ['TD005']
+    nights = ['N1']
+    
+    fs_dir = op.join(prj_data, 'freesurfer')
+    
+    for sbj in subjects:
+        for n in nights:
+            
+            bem_dir = op.join(prj_data, 'mne', sbj, n, 'bem')
+            
+            os.makedirs(bem_dir, exist_ok=True)
+    
+            bem_fname = op.join(bem_dir, f'{sbj}_{n}-bem-sol.fif')
+    
+            compute_bem(sbj, fs_dir, bem_fname)
