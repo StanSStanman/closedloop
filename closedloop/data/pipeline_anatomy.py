@@ -1,12 +1,12 @@
 import os
 import os.path as op
 
-from data.freesurfer_meshes import (compute_freesurfer,
+from closedloop.data.anat.freesurfer_meshes import (compute_freesurfer,
                                     compute_watershed_bem,
                                     compute_scalp_meshes)
-from data.bem import compute_bem
-from data.source_space import compute_source_space
-from data.forward_solution import compute_forward_model
+from closedloop.data.anat.bem import compute_bem
+from closedloop.data.sources.source_space import compute_source_space
+from closedloop.data.sources.forward_solution import compute_forward_model
 
 
 def freesurfer_pipeline(fs_home, prj_data, subject):

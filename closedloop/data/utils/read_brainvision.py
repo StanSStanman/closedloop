@@ -1,7 +1,7 @@
 import os
 import os.path as op
 import mne
-from utils import (fname_finder, brainvision_reader, 
+from closedloop.data.utils.utils import (fname_finder, brainvision_reader, 
                    brainvision_loader, read_elc)
 
 

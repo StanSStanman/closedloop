@@ -8,7 +8,7 @@ import scipy as sp
 import json
 import shutil
 
-from read_mne import read_raw, resample_raw
+from closedloop.data.utils.read_mne import read_raw, resample_raw
 
 
 def do_preprocessing(raw_dir, resample=None, components=.99, 

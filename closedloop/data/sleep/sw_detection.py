@@ -6,7 +6,7 @@ import pandas as pd
 import mne
 import warnings
 from ast import literal_eval
-from staging import crop_hypno
+from closedloop.data.sleep.staging import crop_hypno
 
 
 def envelope(data, n_excl=1, n_kept=3):

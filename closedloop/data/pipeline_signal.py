@@ -7,14 +7,14 @@ import os.path as op
 # import numpy as np
 import pickle
 
-from data.utils import fname_finder
-from data.read_brainvision import brainvision_to_mne
-from sw_detect.staging import compute_staging
-from data.preprocessing import do_preprocessing
-from sw_detect.sw_detection import (detect_sw, compute_stage_envelope)
-from data.events import (make_sw_events, erase_evk_eve)
-from data.epochs import sw_epochs
-from sw_detect.sw_correct import realign_sw_epo
+from closedloop.data.utils.utils import fname_finder
+from closedloop.data.utils.read_brainvision import brainvision_to_mne
+from closedloop.data.sleep.staging import compute_staging
+from closedloop.data.signal.preprocessing import do_preprocessing
+from closedloop.data.sleep.sw_detection import (detect_sw, compute_stage_envelope)
+from closedloop.data.signal.events import (make_sw_events, erase_evk_eve)
+from closedloop.data.signal.epochs import sw_epochs
+from closedloop.data.sleep.sw_correct import realign_sw_epo
 
 
 def set_mne_dataset(prj_data, subject, night):

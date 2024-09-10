@@ -1,7 +1,7 @@
 import mne
 import os
 import os.path as op
-from utils import fname_finder
+from closedloop.data.utils.utils import fname_finder
 
 
 def read_raw(raw_dir, extension='', preload=False, return_fnames=False):

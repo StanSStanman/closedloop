@@ -6,7 +6,7 @@ from tqdm import tqdm
 import pygeodesic.geodesic as geo
 from joblib import Parallel, delayed
 import pickle
-from signal_se import compute_inverse_sources
+from closedloop.data.sources.signal_se import compute_inverse_sources
 
 
 def compute_distances(idx, vert, tris, used_vert_idx, used_vert_pos, 

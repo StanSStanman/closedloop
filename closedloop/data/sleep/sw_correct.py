@@ -10,7 +10,7 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 matplotlib.use('agg')
 
-from sw_detect.sw_detection import detect_sw
+from closedloop.data.sleep.sw_detection import detect_sw
 
 
 def realign_sw_epo(epo_fname, eve_fname, t_dist=.05, n_jobs=32):

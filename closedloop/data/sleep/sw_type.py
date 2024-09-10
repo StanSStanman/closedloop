@@ -125,7 +125,7 @@ def plot_sw_type(epo_fname, sw_type):
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import pickle
-    from closedloop.sw_detect.sw_detection import detect_sw
+    from closedloop.data.sleep.sw_detection import detect_sw
     
     prj_data = '/home/ruggero.basanisi/data/tweakdreams'
 

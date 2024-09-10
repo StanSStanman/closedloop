@@ -7,8 +7,8 @@ import os.path as op
 import mne
 import pickle
 
-from data.signal_se import (compute_inverse_sources, labeling)
-from data.sw_origins import (find_sw_origin, compute_sources_neighbors, 
+from closedloop.data.sources.signal_se import (compute_inverse_sources, labeling)
+from closedloop.data.sleep.sw_origins import (find_sw_origin, compute_sources_neighbors, 
                              compute_sw_origin)
 
 def sw_sources_pipeline(prj_data, subject, night):
