@@ -2,7 +2,7 @@ DESCRIPTION = "ClosedLoop system for automatic slow-waves targeting"
 LONG_DESCRIPTION = """"""
 
 DISTNAME = "closedloop"
-MAINTAINER = "ruggero basanisi"
+MAINTAINER = "Ruggero Basanisi"
 MAINTAINER_EMAIL = "ruggero.basanisi@imtlucca.it"
 URL = "https://github.com/StanSStanman/closedloop"
 LICENSE = "The Unlicense"
@@ -16,7 +16,7 @@ INSTALL_REQUIRES = [
     "pandas",
     "matplotlib",
     "seaborn",
-    "mne>=1.3",
+    "mne>=1.6",
     "numba>=0.57.1",
     "joblib",
     "yasa"
