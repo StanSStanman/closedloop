@@ -217,6 +217,7 @@ def rename_raws(raw_dir, fif_fname):
 if __name__ == '__main__':
     
     data_dir = '/home/ruggero.basanisi/data/tweakdreams'
+    # data_dir = '/media/jerry/ruggero/tweakdreams'
     
     prj = 'TD'
     sub_n = ['001', '002', '003', '005', '006',

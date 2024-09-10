@@ -223,7 +223,8 @@ if __name__ == "__main__":
     
     os.environ['NUMEXPR_MAX_THREADS'] = '32'
 
-    prj_data = '/home/ruggero.basanisi/data/tweakdreams'
+    # prj_data = '/home/ruggero.basanisi/data/tweakdreams'
+    prj_data = '/media/jerry/ruggero/data/tweakdreams'
 
     data_dir = prj_data
     subjects = ['TD001']
