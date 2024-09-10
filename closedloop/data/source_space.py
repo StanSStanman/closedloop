@@ -1,7 +1,8 @@
 import mne
 
 
-def compute_source_space(subject, sbj_dir, src_fname, spacing='oct6'):
+def compute_source_space(subject, sbj_dir, src_fname, spacing='oct6', 
+                         n_jobs=32):
     """Compute the source space
 
     Args:
@@ -12,7 +13,7 @@ def compute_source_space(subject, sbj_dir, src_fname, spacing='oct6'):
             the less sources will be computed. Defaults to 'oct6'.
     """
     src = mne.setup_source_space(subject, spacing=spacing, add_dist=True,
-                                 subjects_dir=sbj_dir, n_jobs=-1)
+                                 subjects_dir=sbj_dir, n_jobs=n_jobs)
 
     src.save(src_fname, overwrite=True)
 

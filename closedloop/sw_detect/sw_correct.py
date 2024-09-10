@@ -10,7 +10,7 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 matplotlib.use('agg')
 
-from sw_detect import detect_sw
+from sw_detect.sw_detection import detect_sw
 
 
 def realign_sw_epo(epo_fname, eve_fname, t_dist=.05, n_jobs=32):
@@ -54,13 +54,14 @@ def realign_sw_epo(epo_fname, eve_fname, t_dist=.05, n_jobs=32):
     bad_ev_idx = [be for be in list(bad_ev_idx) if be is not None]
     maxneg_chs = [mnc for mnc in list(maxneg_chs) if mnc is not None]
     sw_types = [swt for swt in list(sw_types) if swt is not None]
-        
-    good_eve = np.vstack(good_eve)
-    mne.write_events(eve_fname.replace('-eve.fif', '_clean-eve.fif'), 
-                     good_eve, overwrite=True)
+    
+    if len(good_eve) >= 1:
+        good_eve = np.vstack(good_eve)
+        mne.write_events(eve_fname.replace('-eve.fif', '_clean-eve.fif'), 
+                        good_eve, overwrite=True)
     print('\nDiscarded {0} out of {1} epochs'.format(len(bad_ev_idx),
                                                         len(epochs)))
-    print('Kept {0} epochs... saving \n'.format(good_eve.shape[0]), '\n')
+    print('Kept {0} epochs... saving \n'.format(len(good_eve)), '\n')
     
     # TODO
     # df = pd.DataFrame.from_dict(df)
@@ -172,7 +173,7 @@ if __name__ == '__main__':
 
     data_dir = prj_data
     subjects = ['TD001']
-    nights = ['N1']
+    nights = ['N3']
     
     for sbj in subjects:
         for n in nights:
@@ -187,7 +188,7 @@ if __name__ == '__main__':
 
             aw = [a for a in os.listdir(eve_dir) if a.startswith('aw_')]
             aw.sort()
-            aw = ['aw_5']
+            aw = ['aw_8']
             
             for _aw in aw:
                 
@@ -203,7 +204,7 @@ if __name__ == '__main__':
                 chs_fname = op.join(_eve_dir, 'maxneg_channels.txt')
                 swt_fanme = op.join(_eve_dir, 'sw_types.txt')
                 
-                rsw = realign_sw_epo(epo_fname, eve_fname, n_jobs=64)
+                rsw = realign_sw_epo(epo_fname, eve_fname, n_jobs=1)
                 
                 if rsw is not None:
                     gt, bt, mnch, swt = rsw

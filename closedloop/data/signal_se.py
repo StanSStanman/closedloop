@@ -385,7 +385,7 @@ def compute_inverse_sources(epochs, bln_epo, fwd_fname):
     #     epochs_ev.copy()[_i].average().plot_topomap(
     #         times=np.arange(-.25, .251, .05), colorbar=False)
         
-    # brain = es.plot(hemi='split', subjects_dir='/home/ruggero.basanisi/data/tweakdreams/freesurfer', colormap='RdBu_r', surface='white')
+    # brain = es.plot(hemi='split', subjects_dir='/home/ruggero.basanisi/data/tweakdreams/freesurfer', colormap='RdBu_r', initial_time=0., surface='white')
     # neg_pk_lh = es.get_peak(hemi='lh', tmin=-.05, tmax=.05, mode='neg')[0]
     # neg_pk_rh = es.get_peak(hemi='rh', tmin=-.05, tmax=.05, mode='neg')[0]
     # pos_pk_lh = es.get_peak(hemi='lh', tmin=-.05, tmax=.05, mode='pos')[0]
@@ -559,7 +559,7 @@ if __name__ == '__main__':
     prj_data = '/home/ruggero.basanisi/data/tweakdreams'
     
     subjects = ['TD001']
-    nights = ['N1']
+    nights = ['N3']
     
     fs_dir = op.join(prj_data, 'freesurfer')
     
@@ -580,7 +580,7 @@ if __name__ == '__main__':
             epochs = []
             aw = [a for a in os.listdir(epo_dir) if a.startswith('aw_')]
             aw.sort()
-            # aw = ['aw_1']
+            aw = ['aw_2']
             for _aw in aw:
                 epo_fname = op.join(epo_dir, _aw, 'envelope_sw_clean-epo.fif')
                 bln_fname = epo_fname

@@ -223,11 +223,12 @@ if __name__ == "__main__":
     
     os.environ['NUMEXPR_MAX_THREADS'] = '32'
 
-    prj_data = '/home/ruggero.basanisi/data/tweakdreams'
+    # prj_data = '/home/ruggero.basanisi/data/tweakdreams'
+    prj_data = '/media/jerry/ruggero/data/tweakdreams'
 
     data_dir = prj_data
     subjects = ['TD001']
-    nights = ['N3']
+    nights = ['N4']
     
     for sbj in subjects:
         for n in nights:
@@ -236,7 +237,7 @@ if __name__ == "__main__":
             
             aw = [a for a in os.listdir(raw_dir) if a.startswith('aw_')]
             aw.sort()
-            # aw = ['aw_2']
+            aw = ['aw_5']
             
             for _aw in aw:
                 _raw_dir = op.join(raw_dir, _aw)

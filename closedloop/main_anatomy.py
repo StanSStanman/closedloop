@@ -34,6 +34,12 @@ def anatomy_pipeline(prj_data, subject, night):
     trans_dir = op.join(prj_data, 'mne', subject, night, 'trans')
     fwd_dir = op.join(prj_data, 'mne', subject, night, 'fwd')
     
+    raw_dir = op.join(prj_data, 'mne', subject, night, 'raw')
+    if op.exists(op.join(raw_dir, 'aw_0')):
+        info_dir = op.join(raw_dir, 'aw_0')
+    else:
+        info_dir = op.join(raw_dir, 'aw_1')
+    
     os.makedirs(bem_dir, exist_ok=True)
     os.makedirs(src_dir, exist_ok=True)
     os.makedirs(fwd_dir, exist_ok=True)
@@ -46,9 +52,9 @@ def anatomy_pipeline(prj_data, subject, night):
     
     # MNE anatomy pipeline
     compute_bem(subject, fs_sbj_dir, bem_fname)
-    compute_source_space(subject, fs_sbj_dir, src_fname, spacing=6)
+    compute_source_space(subject, fs_sbj_dir, src_fname, spacing=6, n_jobs=32)
     compute_forward_model(info_fname, trans_fname, src_fname, 
-                          bem_fname, fwd_fname)
+                          bem_fname, fwd_fname, n_jobs=32)
 
     return
 
@@ -58,9 +64,9 @@ if __name__ == '__main__':
 
     data_dir = prj_data
     # subjects = ['TD001', 'TD005', 'TD009', 'TD010', 'TD011']
-    subjects = ['TD001', 'TD005']
+    subjects = ['TD026']
     # nights = ['N1', 'N2', 'N3', 'N4']
-    nights = ['N1']
+    nights = ['N4']
 
     fs_home = '/home/programmi/freesurfer'
     

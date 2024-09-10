@@ -99,7 +99,7 @@ def compute_watershed_bem(freesurfer_home, subjects_dir, subject_name):
     # Write commands
     with open(cmd_file, 'w') as f:
         f.writelines('#!/bin/bash\n')
-        f.writelines('source activate py310\n')
+        f.writelines('source activate neuro\n')
         f.writelines('export SUBJECTS_DIR={0}\n'.format(subjects_dir))
         f.writelines('export FREESURFER_HOME={0}\n'.format(freesurfer_home))
         f.writelines('source $FREESURFER_HOME/SetUpFreeSurfer.sh\n')
@@ -140,7 +140,7 @@ def compute_scalp_meshes(freesurfer_home, subjects_dir, subject_name):
     # Write commands
     with open(cmd_file, 'w') as f:
         f.writelines('#!/bin/bash\n')
-        f.writelines('source activate py310\n')
+        f.writelines('source activate neuro\n')
         f.writelines('export SUBJECTS_DIR={0}\n'.format(subjects_dir))
         f.writelines('export FREESURFER_HOME={0}\n'.format(freesurfer_home))
         f.writelines('source $FREESURFER_HOME/SetUpFreeSurfer.sh\n')
@@ -169,10 +169,11 @@ if __name__ == '__main__':
     #             'TD021', 'TD022', 'TD025', 'TD026', 'TD027', 'TD028', 'TD030', 
     #             'TD031', 'TD0032', 'TD034',]
     
-    subjects = ['TD010', 'TD011']
+    subjects = ['TD022', 'TD026', 'TD028', 'TD029', 'TD034']
+    subjects = ['TD034']
 
     sbj_dir = op.join(prj_data, 'freesurfer')
-    n_jobs = 32
+    n_jobs = 16
     
     for sbj in subjects:
         mri_fname = op.join(prj_data, 'mri', 

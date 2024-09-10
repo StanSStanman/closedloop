@@ -79,8 +79,12 @@ def sw_epochs(raw_fname, eve_fname, epo_fname, sfreq=100., picks=None,
     
     # epochs.load_data().filter(.5, 4., n_jobs=32)
     
-    epochs.save(epo_fname, overwrite=True, split_naming='neuromag')
-    print('Epochs saved at:', epo_fname)
+    epochs.drop_bad()
+    if len(epochs) != 0:
+        epochs.save(epo_fname, overwrite=True, split_naming='neuromag')
+        print('Epochs saved at:', epo_fname)
+    else:
+        print('All epochs dropped, skipping...')
     
     return epochs
     
@@ -105,7 +109,7 @@ if __name__ == '__main__':
 
             aw = [a for a in os.listdir(eve_dir) if a.startswith('aw_')]
             aw.sort()
-            # aw = ['aw_2']
+            aw = ['aw_8']
             
             for _aw in aw:
                 
@@ -120,16 +124,16 @@ if __name__ == '__main__':
                 epo_fname = op.join(_epo_dir, 'envelope_sw-epo.fif')
                 
                 # Making epochs the first time (not clean)
-                sw_epochs(prep_fname, eve_fname, epo_fname, sfreq=100., 
-                          picks=None, eve_id=None, tmin=-2., tmax=2., 
-                          fmin=.3, fmax=40., reject={'eeg': 500e-6},
-                          baseline=None)
+                # sw_epochs(prep_fname, eve_fname, epo_fname, sfreq=100., 
+                #           picks=None, eve_id=None, tmin=-2., tmax=2., 
+                #           fmin=.3, fmax=40., reject={'eeg': 500e-6},
+                #           baseline=None)
 
                 # Making clean sw events epochs
-                # cl_eve_fname = op.join(_eve_dir, 'envelope_sw_clean-eve.fif')
-                # cl_epo_fname = op.join(_epo_dir, 'envelope_sw_clean-epo.fif')
-                # if op.exists(cl_eve_fname):
-                #     sw_epochs(prep_fname, cl_eve_fname, cl_epo_fname, 
-                #               sfreq=100., picks=None, eve_id=None, tmin=-8., 
-                #               tmax=2., fmin=.5, fmax=4., reject=None, 
-                #               baseline=None, add_first_samp=False)
+                cl_eve_fname = op.join(_eve_dir, 'envelope_sw_clean-eve.fif')
+                cl_epo_fname = op.join(_epo_dir, 'envelope_sw_clean-epo.fif')
+                if op.exists(cl_eve_fname):
+                    sw_epochs(prep_fname, cl_eve_fname, cl_epo_fname, 
+                              sfreq=100., picks=None, eve_id=None, tmin=-8., 
+                              tmax=2., fmin=.5, fmax=4., reject=None, 
+                              baseline=None, add_first_samp=False)

@@ -2,7 +2,7 @@ import mne
 
 
 def compute_forward_model(info_fname, trans_fname, src_fname,
-                          bem_fname, fwd_fname):
+                          bem_fname, fwd_fname, n_jobs=32):
     """_summary_
 
     Args:
@@ -25,7 +25,7 @@ def compute_forward_model(info_fname, trans_fname, src_fname,
     fwd = mne.make_forward_solution(info=info, trans=trans,
                                     src=src, bem=bem,
                                     meg=False, eeg=True,
-                                    mindist=0.0, n_jobs=-1, verbose=False)
+                                    mindist=0.0, n_jobs=n_jobs, verbose=False)
 
     mne.write_forward_solution(fwd_fname, fwd, overwrite=True)
 
