@@ -1,6 +1,6 @@
-import sys
-sys.path.append("/home/ruggero.basanisi/python_projects/space/closedloop/closedloop/data")
-sys.path.append("/home/ruggero.basanisi/python_projects/space/closedloop/closedloop/sw_detect")
+# import sys
+# sys.path.append("/home/ruggero.basanisi/python_projects/space/closedloop/closedloop/data")
+# sys.path.append("/home/ruggero.basanisi/python_projects/space/closedloop/closedloop/sw_detect")
 
 import os
 import os.path as op
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     prj_data = '/home/ruggero.basanisi/data/tweakdreams'
     
     # subjects = ['TD001', 'TD005', 'TD009', 'TD010', 'TD011']
-    subjects = ['TD022']
+    subjects = ['TD028']
     # nights = ['N1', 'N2', 'N3', 'N4']
     nights = ['N3', 'N4']
 

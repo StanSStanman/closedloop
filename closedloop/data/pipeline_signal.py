@@ -1,6 +1,6 @@
-import sys
-sys.path.append("/home/ruggero.basanisi/python_projects/space/closedloop/closedloop/data")
-sys.path.append("/home/ruggero.basanisi/python_projects/space/closedloop/closedloop/sw_detect")
+# import sys
+# sys.path.append("/home/ruggero.basanisi/python_projects/space/closedloop/closedloop/data")
+# sys.path.append("/home/ruggero.basanisi/python_projects/space/closedloop/closedloop/sw_detect")
 
 import os
 import os.path as op
@@ -164,9 +164,9 @@ if __name__ == '__main__':
     # subjects = ['TD001', 'TD005', 'TD009', 'TD010', 'TD011', 
     #             'TD022', 'TD026', 'TD028', 'TD029', 'TD034']
     subjects = ['TD022', 'TD026', 'TD028', 'TD029', 'TD034']
-    subjects = ['TD028']
+    subjects = ['TD034']
     nights = ['N1', 'N2', 'N3', 'N4']
-    # nights = ['N4']
+    nights = ['N3', 'N4']
 
     for sbj in subjects:
         for n in nights:

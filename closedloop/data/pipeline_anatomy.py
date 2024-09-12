@@ -64,9 +64,9 @@ if __name__ == '__main__':
 
     data_dir = prj_data
     # subjects = ['TD001', 'TD005', 'TD009', 'TD010', 'TD011']
-    subjects = ['TD026']
-    # nights = ['N1', 'N2', 'N3', 'N4']
-    nights = ['N4']
+    subjects = ['TD028']
+    nights = ['N1', 'N2', 'N3', 'N4']
+    # nights = ['N4']
 
     fs_home = '/home/programmi/freesurfer'
     

@@ -140,21 +140,23 @@ def compute_topographies(subject, night, swori_fname, areas):
     
     
 if __name__ == '__main__':
+    import closedloop
     import pandas as pd
     
     prj_data = '/home/ruggero.basanisi/data/tweakdreams'
 
     data_dir = prj_data
-    subjects = ['TD022']
+    subjects = ['TD028']
     nights = ['N1', 'N2', 'N3', 'N4']
-    nights = ['N4']
+    # nights = ['N4']
     swori_fnames = ['surf_point_origins.txt', 
                     'geodesic_origins.txt', 
                     'spherical_origins.txt']
     swori_labels = ['source', 'geodesic', 'spherical']
     
     # aparc_fname = op.join(os.getcwd(), 'closedloop', 'data', 'aparc.xlsx')
-    aparc_fname = op.join(os.getcwd(), 'data', 'aparc.xlsx')
+    abs_path = op.dirname(closedloop.__file__)
+    aparc_fname = op.join(abs_path, 'viz', 'aparc.xlsx')
     
     aparc = pd.read_excel(aparc_fname)
     hemi = ['-lh', '-rh']
