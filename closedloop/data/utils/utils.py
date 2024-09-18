@@ -124,6 +124,9 @@ def read_elc(fname, head_size=None):
             if 'HeadShapePoints' in line:
                 continue
             hs_pos.append(list(map(float, line.split())))
+            
+    # Check for blank lines at the end of the file
+    hs_pos = [hsp for hsp in hs_pos if len(hsp) != 0]            
 
     pos = np.array(pos) * scale
     hs_pos = np.array(hs_pos) * hs_scale
@@ -134,6 +137,10 @@ def read_elc(fname, head_size=None):
     # nasion, lpa, rpa = [hs_pos.pop(n, None) for n in fid_names]
     nasion, lpa, rpa = tuple(hs_pos[-3:])
     hs_pos = hs_pos[:-3, :]
+    
+    # Check for reference points
+    if nasion[1] != 0 or nasion[2] != 0:
+        nasion, lpa, rpa = None, None, None
 
     ch_pos = {ch_names_[i]: pos[i] for i in range(len(ch_names_))}
 
