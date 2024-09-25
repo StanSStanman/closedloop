@@ -2,8 +2,9 @@ import mne_lsl
 from mne_lsl.lsl import resolve_streams
 import time
 
+
 import matplotlib
-# matplotlib.use('Qt5Agg')
+matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 
 
@@ -20,13 +21,13 @@ sname, stype, suid = device.name, device.stype, device.uid
 stream = mne_lsl.stream.StreamLSL(bufsize=5, name=sname, stype=stype)
 stream.connect(acquisition_delay=0, processing_flags='all', timeout=5.)
 
-time.sleep(5)
+time.sleep(10)
 
 dt_chunks, ts_chunks = [], []
 
 t0 = time.time()
 t1 = t0 + 30
-interval = 0.01
+interval = 0.02
 tnext = t0
 
 # stream.acquire()
