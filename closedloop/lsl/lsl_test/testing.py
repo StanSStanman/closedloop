@@ -92,7 +92,7 @@ class streamer_test:
                 if t in samp_data:
                     # print(samp_data)
                     self.timestamps.append([t, 'in', time.time()])
-                    self.delays_pos.append(n_samp - np.where(samp_data==t)[0])
+                    self.delays_pos.append([n_samp, np.where(samp_data==t)[0]])
                 
     def start_trigger(self):
         for tc, tt in zip(self.trig_code, self.trig_time):
@@ -138,8 +138,8 @@ if __name__ == "__main__":
     
     test = streamer_test(t_lenght=550, interval=0.01, 
                          ch_trig=67, triggers=triggers)
-    # test.stream_search(sname='EE225-000000-000625', stype='EEG')
-    test.stream_search(sname='MNE-LSL-Player', stype='')
+    test.stream_search(sname='EE225-000000-000625', stype='EEG')
+    # test.stream_search(sname='MNE-LSL-Player', stype='')
     test.stream_connect()
     test.start_test()
     
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     delays_df = pd.DataFrame(delays, columns=['trig_id', 'inout', 'timestamp'])
     delays_df.to_csv('/home/phantasos/Scrivania/lsl_tests/test_4.csv')
     d_pos = np.hstack(d_pos)
-    d_pos_df = pd.DataFrame(d_pos, columns=['trig_idx'])
+    d_pos_df = pd.DataFrame(d_pos, columns=['n_samp', 'trig_idx'])
     d_pos_df.to_csv('/home/phantasos/Scrivania/lsl_tests/test_idx_4.csv')
     
     print(test.get_delays())
