@@ -157,7 +157,7 @@ class stimulation_protocol:
         while not connected.value:
             try:
                 stream.connect(acquisition_delay=0, 
-                               processing_flags=['clocksync', 'dejitter'], 
+                               processing_flags='all', 
                                timeout=5.)
                 
                 if filter is not None:
@@ -181,6 +181,7 @@ class stimulation_protocol:
         t_start = time.perf_counter()
         t_next = t_start
         
+        n_samp = 0
         while acquiring.value:
             
             t_next = t_next + interval
@@ -189,16 +190,37 @@ class stimulation_protocol:
                 high_precision_sleep(delay)
             
             # print(stream.connected)
+            
             stream.acquire()
-            # print(stream.n_new_samples)
+            # print(stream.n_new_samples, stream.name)
+            
+            # new_samp = stream.n_new_samples
+            # tot_samp = n_samp + new_samp
+            # if tot_samp == 33:
+            #     data, timestamps = stream.get_data()
+            #     queue.put((data, timestamps))
+            #     n_samp = 0
+            # elif tot_samp < 33:
+            #     n_samp = new_samp
+            # else:
+            #     data, timestamps = stream.get_data()    
+            # print(tot_samp, stream.name)
             
             data, timestamps = stream.get_data()
-            # print(timestamps[-1])
-
             queue.put((data, timestamps))
             
+            # print(timestamps[-1])
+            
+        print('Stopping acquisition for stream', stream.name, 'at', time.perf_counter())
+            
         stream.disconnect()
-        connected = stream.connected
+        connected.value = stream.connected
+        print('Stream', stream.name, 'disconnected with value', connected.value)
+        return
+    
+    
+    def stop_acquisition(self):
+        self.aquiring_data.value = False
         return
     
     
@@ -235,8 +257,10 @@ class stimulation_protocol:
                                                      self.all_connected)
                                                )
                 acquire_proc.append(proc)
+                # high_precision_sleep(.011)
                 
         for p in acquire_proc:
+            p.daemon = True
             p.start()
         
         while not self.all_connected.value:
@@ -249,6 +273,9 @@ class stimulation_protocol:
 
         print('All streams connected')
         
+        past_time = [0, 0, 0, 0]
+        change_time_start = time.perf_counter()
+        all_amp_new = 0
         while self.aquiring_data.value:
             
             _data, _timestamps = [], []
@@ -257,6 +284,8 @@ class stimulation_protocol:
                 dt, ts = q.get()
                 _data.append(dt.astype('float32'))
                 _timestamps.append(np.round(ts.astype('float32'), 3))
+                # _data.append(dt)
+                # _timestamps.append(np.round(ts, 3))
                 # _timestamps.append(ts.astype('float32'))
                 # _timestamps.append(ts)
                 # self.data.put(dt)
@@ -265,12 +294,14 @@ class stimulation_protocol:
             # These lines are for putting the data in the thread, they are super RAM consuming
             # UNLESS you don't retrieve continuously the data from the queue
             # TODO find a way to stop the thread and flush the queue when stopping acquisition
-            self.data.put(_data)
-            self.timestamps.put(_timestamps)
+            # self.data.put(_data)
+            # self.timestamps.put(_timestamps)
             
             # print(self.timestamps[-1][-1], time.perf_counter())
+            # past_time = last_time
             last_time = [lts[-1] for lts in _timestamps]
             print(last_time)
+            # print([_d.shape for _d in _data])
             
             # def no_memory_explosion(queues):
             #     while True:
@@ -280,14 +311,29 @@ class stimulation_protocol:
             #     pass
             # explode = multiprocessing.Process(target=no_memory_explosion, args=(queues,)).start()
             
-            
-            
-            func_start = time.perf_counter()
             self.sync_stack_data(_data, _timestamps, n_chans=64)
-            # sync = threading.Thread(target=self.sync_stack_data, args=(_data, _timestamps, 64))
-            # sync.start()
-            # sync.join()
-            print(time.perf_counter() - func_start)
+            # print([len(lts) for lts in _timestamps])
+            
+            # if past_time != last_time:
+            if all(pt != lt for pt, lt in zip(past_time, last_time)):
+                # func_start = time.perf_counter()
+                # self.sync_stack_data(_data, _timestamps, n_chans=64)
+                # sync = threading.Thread(target=self.sync_stack_data, args=(_data, _timestamps, 64))
+                # sync.start()
+                # sync.join()
+                # print(time.perf_counter() - func_start)
+                # print([len(lts) for lts in _timestamps])
+                
+                past_time = last_time
+                
+                change_time_end = time.perf_counter()
+                print('All ampli updated after', change_time_end - change_time_start, 'seconds')
+                change_time_start = change_time_end
+                
+            # if all(pt == lt for pt, lt in zip(past_time, last_time)):
+            #     self.sync_stack_data(_data, _timestamps, n_chans=64)
+                
+            
 
             
             # ln.set_xdata(self.timestamps[0].squeeze())
@@ -301,7 +347,10 @@ class stimulation_protocol:
             
             # print('\n New acquisition:', [s.n_new_samples for s in self.streams])
             
+        print('Out of acquiring loop')
+        # time.sleep(2)
         for p in acquire_proc:
+            p.terminate()
             p.join()
         print('Acquisition stopped')
         
@@ -375,9 +424,10 @@ class stimulation_protocol:
     # @njit
     def sync_stack_data(self, data: Optional[List[np.ndarray]], timestamps: Optional[List[np.ndarray]], n_chans: int) -> None:
         
-        data = data if data is not None else self.data
-        timestamps = timestamps if timestamps is not None else self.timestamps
-            
+        # data = data if data is not None else self.data
+        # timestamps = timestamps if timestamps is not None else self.timestamps
+        
+        # print([len(ts) for ts in timestamps])
         # print(timestamps[0][-1])
         # data = np.vstack([d[:nc] for d, nc in zip(self.data, n_chans)])
         
@@ -385,17 +435,41 @@ class stimulation_protocol:
         ch_data = [d[:n_chans, :] for d in data]
         # Aligning data according to the timestamps
         ts = time.perf_counter()
-        xarr = [
-        xr.DataArray(_d, 
-                     coords={"channels": np.arange(n_chans) + n_chans * i, 
-                             "times": _t}, 
-                     dims=("channels", "times")).drop_duplicates(dim="times", 
-                                                                 keep="last")
-        for i, (_d, _t) in enumerate(zip(ch_data, timestamps))]
+        xarr = []
+        for i, (_d, _t) in enumerate(zip(ch_data, timestamps)):
+            da = xr.DataArray(_d, coords={
+                'channels': np.arange(n_chans) + n_chans * i, 
+                'times': _t}, dims=('channels', 'times'))
+            da = da.drop_duplicates(dim='times', keep=False)
+            print(da.times)
+            xarr.append(da)
+        # xarr = [
+        # xr.DataArray(_d, 
+        #              coords={"channels": np.arange(n_chans) + n_chans * i, 
+        #                      "times": _t}, 
+        #              dims=("channels", "times")).drop_duplicates(dim='times', 
+        #                                                          keep='last')
+        # for i, (_d, _t) in enumerate(zip(ch_data, timestamps))]
+        # xarr = [
+        # xr.DataArray(_d, 
+        #              coords={"channels": np.arange(n_chans) + n_chans * i, 
+        #                      "times": _t}, 
+        #              dims=("channels", "times"))
+        # for i, (_d, _t) in enumerate(zip(ch_data, timestamps))]
+        
+        print([len(ts.times) for ts in xarr])
+        
         print('Creating xarrays:', time.perf_counter() - ts)
         
         ts = time.perf_counter()
         aligned_data = xr.combine_by_coords(xarr)
+        # try:
+        #     aligned_data = xr.combine_by_coords(xarr)
+        # except Exception:
+        #     for t in timestamps:
+        #         for _t in t:
+        #             print(_t)
+        #         print('\n\n\n\n\n\n')
         print('Combining data:', time.perf_counter() - ts)
                 
         # Check if there are missing values in the aligned data, 
@@ -535,19 +609,21 @@ if __name__ == '__main__':
     
     # task.start_protocol()
     
-    task.new_protocol(filter=[0.5, 15.])
+    task.new_protocol(interval=0.011, filter=[0.5, 15.])
     time.sleep(5)
 
     print('Acquiring data...')
     t0 = time.time()
-    t1 = t0 + 30
+    t1 = t0 + 5
     while time.time() < t1:
         # print(task.data.get())
         # print(task.timestamps.get()[0][-1], time.perf_counter())
         pass
+    print('time passed')
        
-    task.aquiring_data.value = False
+    task.stop_acquisition()
     print('closing threads...')
+
     task.protocol_thread.join()
     print('Done')
     
