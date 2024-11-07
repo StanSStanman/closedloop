@@ -10,24 +10,25 @@ import matplotlib.pyplot as plt
 
 devices = resolve_streams()
 print(devices)
-# for d in devices:
-#     if d.name == 'EE225-000000-000625' and d.stype == 'EEG':
-#         device = d
-# print(device)
-device = devices[0]
+for d in devices:
+    if d.name == 'EE225-000000-000625' and d.stype == 'EEG':
+        device = d
+print(device)
+# device = devices[0]
 
 sname, stype, suid = device.name, device.stype, device.uid
 
 stream = mne_lsl.stream.StreamLSL(bufsize=5, name=sname, stype=stype)
 stream.connect(acquisition_delay=0, processing_flags='all', timeout=5.)
+stream.filter(.5, 15)
 
 time.sleep(10)
 
 dt_chunks, ts_chunks = [], []
 
 t0 = time.time()
-t1 = t0 + 30
-interval = 0.02
+t1 = t0 + 10
+interval = 0.01
 tnext = t0
 
 # stream.acquire()
@@ -49,7 +50,7 @@ stream.disconnect()
 0 == 0
 
 for c in range(len(dt_chunks)):
-    plt.plot(ts_chunks[c].squeeze(), dt_chunks[c][4, :])
+    plt.plot(ts_chunks[c].squeeze(), dt_chunks[c][1, :])
     # plt.plot(dt_chunks[c][4, :])
     
 plt.show(block=True)

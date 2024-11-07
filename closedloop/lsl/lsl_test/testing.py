@@ -148,10 +148,10 @@ if __name__ == "__main__":
     
     delays_df = pd.DataFrame(delays, columns=['trig_id', 'inout', 'timestamp'])
 
-    delays_df.to_csv('/home/phantasos/Scrivania/lsl_tests/test_4.csv')
-    d_pos = np.hstack(d_pos)
+    delays_df.to_csv('/home/phantasos/Scrivania/lsl_tests/test_6.csv')
+    # d_pos = np.hstack(d_pos)
     d_pos_df = pd.DataFrame(d_pos, columns=['n_samp', 'trig_idx'])
-    d_pos_df.to_csv('/home/phantasos/Scrivania/lsl_tests/test_idx_4.csv')
+    d_pos_df.to_csv('/home/phantasos/Scrivania/lsl_tests/test_idx_6.csv')
     
     print(test.get_delays())
     print(test.delays_pos)
