@@ -129,20 +129,28 @@ def read_elc(fname, head_size=None):
     hs_pos = [hsp for hsp in hs_pos if len(hsp) != 0]            
 
     pos = np.array(pos) * scale
-    hs_pos = np.array(hs_pos) * hs_scale
-    if head_size is not None:
-        pos *= head_size / np.median(np.linalg.norm(pos, axis=1))
+    # only include head shape points if they are present
+    if len(hs_pos) != 0:
+        hs_pos = np.array(hs_pos) * hs_scale
+        if head_size is not None:
+            pos *= head_size / np.median(np.linalg.norm(pos, axis=1))
 
-    # ch_pos = _check_dupes_odict(ch_names_, pos)
-    # nasion, lpa, rpa = [hs_pos.pop(n, None) for n in fid_names]
-    nasion, lpa, rpa = tuple(hs_pos[-3:])
-    hs_pos = hs_pos[:-3, :]
-    
+        # ch_pos = _check_dupes_odict(ch_names_, pos)
+        # nasion, lpa, rpa = [hs_pos.pop(n, None) for n in fid_names]
+        nasion, lpa, rpa = tuple(hs_pos[-3:])
+        hs_pos = hs_pos[:-3, :]
+    else:
+        nasion = [1, 1, 1]
+        
     # Check for reference points
     if nasion[1] != 0 or nasion[2] != 0:
         nasion, lpa, rpa = None, None, None
 
     ch_pos = {ch_names_[i]: pos[i] for i in range(len(ch_names_))}
-
-    return make_dig_montage(ch_pos=ch_pos, nasion=nasion, lpa=lpa, rpa=rpa,
-                            hsp=hs_pos, coord_frame='unknown')
+    
+    if nasion is None:
+        return make_dig_montage(ch_pos=ch_pos, nasion=nasion, lpa=lpa, rpa=rpa,
+                                hsp=hs_pos, coord_frame='head')
+    else:
+        return make_dig_montage(ch_pos=ch_pos, nasion=nasion, lpa=lpa, rpa=rpa,
+                                hsp=hs_pos, coord_frame='unknown')
